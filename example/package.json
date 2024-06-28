@@ -16,6 +16,8 @@
     "@capacitor/core": "latest",
     "@capacitor/camera": "latest",
     "@capacitor/splash-screen": "latest",
+    "@capawesome/capacitor-file-picker": "^6.0.0",
+    "@capacitor/filesystem": "6.0.0",
     "capacitor-video-compress": "file:..",
     "@capacitor/ios": "^6.0.0",
     "@capacitor/android": "^6.0.0"

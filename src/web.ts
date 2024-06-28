@@ -7,7 +7,10 @@ export class CapacitorVideoCompressWeb
   implements CapacitorVideoCompressPlugin
 {
   async echo(options: { value: string }): Promise<{ value: string }> {
-    console.log('ECHO', options);
     return options;
+  }
+
+  async compressVideo(options: { fileUri: string }): Promise<{ compressedUri: string }> {
+    return { compressedUri: options.fileUri };
   }
 }
