@@ -52,7 +52,9 @@ window.compressVideo = async () => {
         console.log('compressedUri', compressedUri)
 
         const readFileResult = await Filesystem.readFile({
-            path: compressedUri,
+            path: compressedUri.split('/').pop(), // android
+            // path: compressedUri, // ios
+            directory: Directory.Data
         })
 
         console.log('readFileResult', readFileResult)
@@ -71,5 +73,6 @@ window.compressVideo = async () => {
         alert(`Compress finished in ${(new Date().getTime() - timeStart) / 1000}s`)
     } catch (e) {
         console.error('An error occurred', e.message)
+        alert(`An error occurred: ${e.message}`)
     }
 }
