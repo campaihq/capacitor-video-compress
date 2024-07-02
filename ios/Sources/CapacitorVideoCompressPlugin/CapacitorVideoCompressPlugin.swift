@@ -27,7 +27,7 @@ public class CapacitorVideoCompressPlugin: CAPPlugin, CAPBridgedPlugin {
         ])
     }
     
-    var isFirstBuffer = true
+    private var isFirstBuffer = true
     
     @objc func compressVideo(_ call: CAPPluginCall) {
         guard let fileUri = call.getString("fileUri"),
@@ -67,7 +67,7 @@ public class CapacitorVideoCompressPlugin: CAPPlugin, CAPBridgedPlugin {
         let bitrate = calculateNewBitrate(videoTrack)
         let size: (width: Int, height: Int) = calculateNewResolution(videoTrack)
         
-        let videoWriterInput = AVAssetWriterInput(mediaType: AVMediaType.video, outputSettings: getWriteSettings(Int(bitrate), size.width, size.height))
+        let videoWriterInput = AVAssetWriterInput(mediaType: AVMediaType.video, outputSettings: getWriterSettings(Int(bitrate), size.width, size.height))
         videoWriterInput.expectsMediaDataInRealTime = true
         videoWriterInput.transform = videoTrack.preferredTransform
         videoWriter.add(videoWriterInput)
@@ -256,8 +256,10 @@ public class CapacitorVideoCompressPlugin: CAPPlugin, CAPBridgedPlugin {
      * - For lower resolutions, preserves the original size.
      *
      * The new dimensions are adjusted to be multiples of 16 for optimal compression efficiency when using the H.264 codec.
+     *
+     * - Parameter videoTrack: The `AVAssetTrack` representing the video track for which to calculate the new dimensions.
+     * - Returns: A tuple containing the new width and height as integers, adjusted based on the resolution categories and aligned to multiples of 16.
      */
-
     private func calculateNewResolution(_ videoTrack: AVAssetTrack) -> (width: Int, height: Int) {
         let size = videoTrack.naturalSize
         let width = size.width
@@ -290,7 +292,7 @@ public class CapacitorVideoCompressPlugin: CAPPlugin, CAPBridgedPlugin {
         return (newWidth, newHeight)
     }
     
-    private func getWriteSettings(_ bitrate: Int, _ width: Int, _ height: Int) -> [String : AnyObject] {
+    private func getWriterSettings(_ bitrate: Int, _ width: Int, _ height: Int) -> [String : AnyObject] {
         let videoWriterCompressionSettings = [
             AVVideoAverageBitRateKey : bitrate
         ]
