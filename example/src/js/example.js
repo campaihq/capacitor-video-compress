@@ -31,7 +31,7 @@ window.compressVideo = async () => {
 
         if (photosPermissions !== 'granted') {
             const { photos: newPhotosPermissions } = await Camera.requestPermissions({ permissions: ['photos'] })
-            if (newPhotosPermissions !== 'granted') {
+            if (newPhotosPermissions !== 'granted' && newPhotosPermissions !== 'limited') {
                 alert('Permission to read photos denied')
                 return []
             }
