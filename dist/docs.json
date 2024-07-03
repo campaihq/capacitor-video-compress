@@ -1,0 +1,31 @@
+{
+  "api": {
+    "name": "CapacitorVideoCompressPlugin",
+    "slug": "capacitorvideocompressplugin",
+    "docs": "",
+    "tags": [],
+    "methods": [
+      {
+        "name": "compressVideo",
+        "signature": "(options: { fileUri: string; }) => Promise<{ compressedUri: string; }>",
+        "parameters": [
+          {
+            "name": "options",
+            "docs": "",
+            "type": "{ fileUri: string; }"
+          }
+        ],
+        "returns": "Promise<{ compressedUri: string; }>",
+        "tags": [],
+        "docs": "",
+        "complexTypes": [],
+        "slug": "compressvideo"
+      }
+    ],
+    "properties": []
+  },
+  "interfaces": [],
+  "enums": [],
+  "typeAliases": [],
+  "pluginConfigs": []
+}
