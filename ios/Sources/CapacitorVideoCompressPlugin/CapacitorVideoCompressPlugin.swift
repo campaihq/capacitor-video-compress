@@ -15,17 +15,10 @@ public class CapacitorVideoCompressPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "CapacitorVideoCompressPlugin"
     public let jsName = "CapacitorVideoCompress"
     public let pluginMethods: [CAPPluginMethod] = [
-        CAPPluginMethod(name: "echo", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "compressVideo", returnType: CAPPluginReturnPromise)
     ]
-    private let implementation = CapacitorVideoCompress()
 
-    @objc func echo(_ call: CAPPluginCall) {
-        let value = call.getString("value") ?? ""
-        call.resolve([
-            "value": implementation.echo(value)
-        ])
-    }
+    private let implementation = CapacitorVideoCompress()
     
     private var isFirstBuffer = true
     
