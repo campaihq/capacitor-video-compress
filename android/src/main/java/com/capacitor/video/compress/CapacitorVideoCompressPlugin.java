@@ -55,11 +55,17 @@ public class CapacitorVideoCompressPlugin extends Plugin {
                     " Mbps)"
                 );
 
-                // Skips compression and returns empty string
-                JSObject ret = new JSObject();
-                ret.put("compressedUri", "");
-                call.resolve(ret);
-                return;
+                // Try to get original file path - only skip compression if we can get it
+                String originalFilePath = getFilePathFromUri(videoUri);
+                if (originalFilePath != null) {
+                    // Skips compression and returns original file path
+                    JSObject ret = new JSObject();
+                    ret.put("compressedUri", originalFilePath);
+                    call.resolve(ret);
+                    return;
+                } else {
+                    Log.i("compressVideo", "Could not get original file path, proceeding with compression");
+                }
             } else {
                 Log.i(
                     "compressVideo",
@@ -241,6 +247,57 @@ public class CapacitorVideoCompressPlugin extends Plugin {
             Log.e("compressVideo", "Error getting file size: " + e.getMessage());
         }
         return 0;
+    }
+
+    /**
+     * Get file path from Uri
+     */
+    private String getFilePathFromUri(Uri uri) {
+        try {
+            // For file:// URIs, getPath() works directly
+            if ("file".equals(uri.getScheme())) {
+                String path = uri.getPath();
+                if (path != null) {
+                    return path;
+                }
+            }
+
+            // For content:// URIs, try to get the actual file path
+            ContentResolver contentResolver = getContext().getContentResolver();
+
+            // Try MediaStore.Video.Media.DATA first (for videos)
+            String[] projection = { android.provider.MediaStore.Video.Media.DATA };
+            android.database.Cursor cursor = contentResolver.query(uri, projection, null, null, null);
+
+            if (cursor != null) {
+                try {
+                    if (cursor.moveToFirst()) {
+                        int columnIndex = cursor.getColumnIndex(android.provider.MediaStore.Video.Media.DATA);
+                        if (columnIndex != -1) {
+                            String path = cursor.getString(columnIndex);
+                            if (path != null && new File(path).exists()) {
+                                Log.i("compressVideo", "File path from MediaStore: " + path);
+                                return path;
+                            }
+                        }
+                    }
+                } finally {
+                    cursor.close();
+                }
+            }
+
+            // Fallback: try getPath() anyway
+            String path = uri.getPath();
+            if (path != null) {
+                File file = new File(path);
+                if (file.exists()) {
+                    return path;
+                }
+            }
+        } catch (Exception e) {
+            Log.e("compressVideo", "Error getting file path from Uri: " + e.getMessage());
+        }
+        return null;
     }
 
     /**
