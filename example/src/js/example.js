@@ -1,78 +1,80 @@
-import { Camera } from '@capacitor/camera'
-import { Capacitor } from '@capacitor/core'
-import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Camera } from '@capacitor/camera';
+import { Capacitor } from '@capacitor/core';
+import { Media } from '@capacitor-community/media';
 import { FilePicker } from '@capawesome/capacitor-file-picker';
 import { CapacitorVideoCompress } from 'capacitor-video-compress';
 
-const base64ToBlob = (b64Data, contentType, sliceSize = 512) => {
-    const byteCharacters = atob(b64Data)
-    const byteArrays = []
-      
-    for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
-        const slice = byteCharacters.slice(offset, offset + sliceSize)
-      
-        const byteNumbers = new Array(slice.length)
-        // eslint-disable-next-line no-plusplus
-        for (let i = 0; i < slice.length; i++) {
-            byteNumbers[i] = slice.charCodeAt(i)
-        }
-      
-        const byteArray = new Uint8Array(byteNumbers)
-        byteArrays.push(byteArray)
+const getMediasAlbumIdentifier = async () => {
+  const albumName = 'videoCompress';
+  const { albums } = await Media.getAlbums();
+  let album = albums.find(a => a.name === albumName);
+  if (!album) {
+    try {
+      await Media.createAlbum({ name: albumName });
+    } catch (e) {
+      console.error('Creating album', e);
+      // on Android, albuns might not be returned by getAlbums so we receive an error
+      // when we try to create it again, that's why we ignore it
     }
-      
-    return new Blob(byteArrays, { type: contentType })
-}
+
+    const { albums: updatedAlbuns } = await Media.getAlbums();
+    album = updatedAlbuns.find(a => a.name === albumName);
+  }
+
+  return album?.identifier;
+};
+
+const saveVideoToGallery = async fileUri => {
+  const albumIdentifier = await getMediasAlbumIdentifier();
+
+  const res = await Media.saveVideo({
+    path: fileUri,
+    // on Android for safety we use albumName always, in case album was not found
+    albumIdentifier,
+  });
+
+  return res?.filePath;
+};
 
 window.compressVideo = async () => {
-    if (Capacitor.isNativePlatform()) {
-        const { photos: photosPermissions } = await Camera.checkPermissions()
-        console.log('perms_photos', photosPermissions)
+  if (Capacitor.isNativePlatform()) {
+    const { photos: photosPermissions } = await Camera.checkPermissions();
+    console.log('perms_photos', photosPermissions);
 
-        if (photosPermissions !== 'granted') {
-            const { photos: newPhotosPermissions } = await Camera.requestPermissions({ permissions: ['photos'] })
-            if (newPhotosPermissions !== 'granted' && newPhotosPermissions !== 'limited') {
-                alert('Permission to read photos denied')
-                return []
-            }
-        }
+    if (photosPermissions !== 'granted') {
+      const { photos: newPhotosPermissions } = await Camera.requestPermissions({
+        permissions: ['photos'],
+      });
+      if (
+        newPhotosPermissions !== 'granted' &&
+        newPhotosPermissions !== 'limited'
+      ) {
+        alert('Permission to read photos denied');
+        return [];
+      }
     }
+  }
 
-    const { files: result } = await FilePicker.pickVideos({
-        limit: 1,
-    })
+  const { files: result } = await FilePicker.pickVideos({
+    limit: 1,
+  });
 
-    console.log('result', result)
+  console.log('pickVideos: result', result);
 
-    const path = result[0].path
+  const path = result[0].path;
 
-    try {
-        const timeStart = new Date().getTime()
-        const { compressedUri } = await CapacitorVideoCompress.compressVideo({ fileUri: path })
-        console.log('compressedUri', compressedUri)
+  try {
+    const timeStart = new Date().getTime();
+    const { compressedUri } = await CapacitorVideoCompress.compressVideo({
+      fileUri: path,
+    });
+    console.log(`compressVideo: compressedUri "${compressedUri}"`);
 
-        const readFileResult = await Filesystem.readFile({
-            path: compressedUri.split('/').pop(), // android
-            // path: compressedUri, // ios
-            directory: Directory.Data
-        })
+    await saveVideoToGallery(compressedUri);
 
-        console.log('readFileResult', readFileResult)
-
-        // const blob = base64ToBlob(readFileResult.data,'video/mp4') 
-        // console.log('blob', blob)
-
-        const fileWriteRes = await Filesystem.writeFile({
-            path: `compressedvideo-${new Date().toISOString().substring(11)}.mp4`,
-            data: readFileResult.data,
-            directory: Directory.Library,
-            encoding: Encoding.UTF8,
-            });
-        console.log('file write result', fileWriteRes)
-
-        alert(`Compress finished in ${(new Date().getTime() - timeStart) / 1000}s`)
-    } catch (e) {
-        console.error('An error occurred', e.message)
-        alert(`An error occurred: ${e.message}`)
-    }
-}
+    alert(`Compress finished in ${(new Date().getTime() - timeStart) / 1000}s`);
+  } catch (e) {
+    console.error('An error occurred', e.message);
+    alert(`An error occurred: ${e.message}`);
+  }
+};
